@@ -47,7 +47,7 @@
   </select>
 
   <label for="incrementDate">Last Increment Date:</label>
-  <input type="date" id="incrementDate" value="2021-07-01" />
+  <input type="date" id="incrementDate" value="2025-07-01" />
 
   <label for="currentLevel">Current Pay Level:</label>
   <select id="currentLevel"></select>
@@ -100,7 +100,7 @@
 
   async function loadPayMatrix() {
     try {
-      const response = await fetch('pay_matrix_sikkim.csv');
+      const response = await fetch('./pay_matrix_sikkim.csv');
       if (!response.ok) throw new Error('Failed to load pay matrix');
       const text = await response.text();
       parseCSV(text);
