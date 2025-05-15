@@ -1,0 +1,30 @@
+# Ignore Mac system files
+
+.DS\_Store
+
+# Ignore node or Python environments (in case used later)
+
+node\_modules/
+.env
+**pycache**/
+
+# Ignore log files
+
+\*.log
+
+# Ignore backup/temporary files
+
+\*.bak
+*.tmp
+\~*
+
+# Ignore OS-generated files
+
+Thumbs.db
+ehthumbs.db
+
+# Ignore IDE/workspace settings
+
+.vscode/
+.idea/
+\*.swp

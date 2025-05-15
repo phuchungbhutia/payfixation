@@ -1,91 +1,110 @@
-# Pay Fixation Calculator (7th CPC)
 
-A simple, browser-based tool to calculate the **Date of Next Increment (DNI)** and **New Basic Pay** after a promotion using Pay Fixation rules (Govt. of India, 2018).
+# Pay Fixation Calculator (Sikkim Govt Revised Pay 2018)
+
+A browser-based tool to calculate the **new basic pay** and **date of next increment** after a promotion using the official pay matrix under Sikkim Government's Revised Pay Rules 2018.
 
 ---
 
-## 🔧 Features
+## ✅ Features
 
-* Choose Fixation Option: **DoP** or **DNI**
-* Enter: Promotion Date, Old Increment Date, Current Pay Level, Promoted Level, and Basic Pay
-* Logic applies 1 increment in current level, then selects next higher basic in promoted level
-* Built with HTML, inline CSS, and vanilla JS — **no setup needed**
+- Automatically loads pay matrix from a local CSV file
+- No upload required — just deploy with the CSV file included
+- Allows user to:
+  - Select promotion date
+  - Choose fixation option: DoP (from promotion) or DNI (from next increment)
+  - Select current pay level and cell
+  - Select promoted pay level
+- Instantly calculates:
+  - **New Basic Pay** (with increment and promotion)
+  - **Date of Next Increment**
 
 ---
 
 ## 🚀 How to Use
 
-1. Download or clone this repo:
+1. **Clone or download this repo**:
+
    ```bash
    git clone https://github.com/phuchungbhutia/payfixation.git
    cd payfixation
    ```
-2. Open `index.html` in your browser
-3. Fill in:
-   * **Promotion Date**
-   * **Fixation Option** (DoP or DNI)
-   * **Old Increment Date** (e.g., 01/07/2021)
-   * **Current Pay Level** and **Promoted Level** (Level 6 & 7 supported)
-   * **Current Basic Pay** (e.g., ₹42300)
-4. The tool shows:
-   * ✅ Next Increment Date
-   * ✅ New Basic Pay after promotion
+2. Make sure the following files are in the root folder:
+
+   - `index.html`
+   - `pay_matrix_sikkim.csv`
+3. Run a local server (e.g., Python):
+
+   ```bash
+   python3 -m http.server 8000
+   # Then open http://localhost:8000 in your browser
+   ```
+4. Or deploy to **GitHub Pages**:
+
+   - Push to GitHub repo
+   - Enable Pages from the repo Settings → Pages → Source: `main` or `gh-pages`
+   - Visit: `https://phuchungbhutia.github.io/payfixation/`
 
 ---
 
-## 🧠 Pay Fixation Logic (Simplified)
-
-* **Step 1:** Add 1 increment in current level (find next cell)
-* **Step 2:** Go to promoted level and pick the **next higher pay**
-* **Step 3:** Set Date of Next Increment based on fixation option:
-  * `DoP`: 1 year from promotion date
-  * `DNI`: 1 year from last increment date
-
----
-
-## 📊 Sample Pay Matrix Used
-
-Level 6:
+## 📄 Pay Matrix File Format (CSV)
 
 ```
-₹35400, ₹36500, ₹37600, ₹38700, ₹39900, ₹41100, ₹42300, ₹43600, ₹44900, ₹46200
+Level,1,2,3,4,5,...
+6,35400,36500,37600,38700,39900,...
+7,44900,46200,47600,49000,50500,...
 ```
 
-Level 7:
-
-```
-₹44900, ₹46200, ₹47600, ₹49000, ₹50500, ₹52000, ₹53600, ₹55200, ₹56900, ₹58600
-```
+- Each row represents a **pay level**
+- Columns after `Level` represent the pay values (steps/cells)
+- Ensure the CSV filename is exactly: `pay_matrix_sikkim.csv`
 
 ---
 
 ## 📁 File Structure
 
 ```
-pay-fixation-calculator/
-├── index.html      # Main interactive calculator
-├── README.md       # This documentation
-└── .gitignore      # Currently empty (future use)
+payfixation/
+├── index.html               # Calculator UI + logic
+├── pay_matrix_sikkim.csv    # Sikkim Pay Matrix CSV (auto-loaded)
+├── README.md                # Instructions and logic
+└── .gitignore               # Git exclusions
 ```
 
 ---
 
-## 🔄 GitHub Workflow
+## 🧠 Logic Summary
 
-To update and push your changes:
+### 🔹 DoP (Fixation from Promotion Date)
+
+- 1 increment in current level (next cell)
+- Fix pay in promoted level: next equal or higher pay
+- DNI = 1 year from promotion date
+
+### 🔹 DNI (Fixation from Next Increment)
+
+- Fix pay at same value in promoted level (no increment) on promotion
+- On DNI:
+  - 1 annual increment + 1 promotion increment in current level
+  - Then fix at next higher pay in promoted level
+- DNI = 1 year from original increment date
+
+---
+
+## 🔄 GitHub Setup
 
 ```bash
+git init
 git add .
-git commit -m "Your commit message here"
-git push origin main
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/phuchungbhutia/payfixation.git
+git push -u origin main
 ```
 
-If deploying on  **GitHub Pages** :
+### To deploy:
 
 ```bash
 git checkout -b gh-pages
-# Push once to create branch
-
 git push origin gh-pages
 ```
 
@@ -97,18 +116,6 @@ https://phuchungbhutia.github.io/payfixation/
 
 ---
 
-## 🧩 To Extend:
+## 📬 License
 
-* Replace the sample matrix with full Pay Matrix from 7th CPC
-* Add PDF/Excel import
-* Add saving/exporting feature
-
----
-
-## 📬 Contributions
-
-Feel free to fork and contribute improvements. This is a basic starter to build on.
-
----
-
-MIT License
+MIT — Free to use, modify, and share with attribution.
