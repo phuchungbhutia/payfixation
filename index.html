@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pay Fixation Calculator (Auto-load CSV)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 600px;
+      width: 100%;
+    }
+    h2 { text-align: center; margin-bottom: 20px; }
+    label { display: block; margin: 10px 0 5px; }
+    input, select {
+      width: 100%; padding: 10px; margin-bottom: 15px;
+      border: 1px solid #ccc; border-radius: 5px;
+    }
+    .output {
+      padding: 15px; background: #e6f4ea; border-left: 5px solid #34a853;
+      margin-top: 20px; border-radius: 5px; font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>Pay Fixation Calculator</h2>
+
+  <label for="promotionDate">Promotion Date:</label>
+  <input type="date" id="promotionDate" />
+
+  <label for="fixationOption">Fixation Option:</label>
+  <select id="fixationOption">
+    <option value="DoP">DoP (Fix on Promotion Date)</option>
+    <option value="DNI">DNI (Fix on Next Increment)</option>
+  </select>
+
+  <label for="incrementDate">Last Increment Date:</label>
+  <input type="date" id="incrementDate" value="2021-07-01" />
+
+  <label for="currentLevel">Current Pay Level:</label>
+  <select id="currentLevel"></select>
+
+  <label for="currentCell">Current Cell (Step):</label>
+  <select id="currentCell"></select>
+
+  <label for="promotedLevel">Promoted Pay Level:</label>
+  <select id="promotedLevel"></select>
+
+  <div class="output" id="result">Loading pay matrix...</div>
+</div>
+
+<script>
+  let payMatrix = {};
+
+  function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    for (let i = 1; i < lines.length; i++) {
+      const parts = lines[i].split(',');
+      const level = parts[0].trim();
+      const values = parts.slice(1).map(p => parseInt(p.trim(), 10));
+      payMatrix[level] = values;
+    }
+  }
+
+  function populateLevels() {
+    const currentLevel = document.getElementById('currentLevel');
+    const promotedLevel = document.getElementById('promotedLevel');
+    currentLevel.innerHTML = '';
+    promotedLevel.innerHTML = '';
+    for (const level in payMatrix) {
+      currentLevel.innerHTML += `<option value="${level}">${level}</option>`;
+      promotedLevel.innerHTML += `<option value="${level}">${level}</option>`;
+    }
+    updateCells();
+  }
+
+  function updateCells() {
+    const level = document.getElementById('currentLevel').value;
+    const currentCell = document.getElementById('currentCell');
+    currentCell.innerHTML = '';
+    if (payMatrix[level]) {
+      payMatrix[level].forEach((pay, index) => {
+        currentCell.innerHTML += `<option value="${index}">${index + 1} - ₹${pay}</option>`;
+      });
+    }
+    calculate();
+  }
+
+  async function loadPayMatrix() {
+    try {
+      const response = await fetch('pay_matrix_sikkim.csv');
+      if (!response.ok) throw new Error('Failed to load pay matrix');
+      const text = await response.text();
+      parseCSV(text);
+      populateLevels();
+      document.getElementById('result').textContent = 'Pay matrix loaded. Enter your details.';
+    } catch (error) {
+      document.getElementById('result').textContent = 'Error loading pay matrix: ' + error.message;
+    }
+  }
+
+  ['promotionDate', 'fixationOption', 'incrementDate', 'currentLevel', 'currentCell', 'promotedLevel']
+    .forEach(id => document.getElementById(id).addEventListener('input', () => {
+      if (id === 'currentLevel') updateCells();
+      else calculate();
+    }));
+
+  function calculate() {
+    const promotionDate = new Date(document.getElementById('promotionDate').value);
+    const incrementDate = new Date(document.getElementById('incrementDate').value);
+    const fixationOption = document.getElementById('fixationOption').value;
+    const currentLevel = document.getElementById('currentLevel').value;
+    const currentCell = parseInt(document.getElementById('currentCell').value);
+    const promotedLevel = document.getElementById('promotedLevel').value;
+    const result = document.getElementById('result');
+
+    if (!payMatrix[currentLevel] || !payMatrix[promotedLevel]) {
+      result.textContent = `⚠️ Missing Pay Matrix levels: ${currentLevel} or ${promotedLevel}`;
+      return;
+    }
+
+    const baseDate = fixationOption === 'DoP' ? promotionDate : incrementDate;
+    const nextDNI = new Date(baseDate);
+    nextDNI.setFullYear(baseDate.getFullYear() + 1);
+
+    let incrementedIndex = currentCell + 1;
+    if (incrementedIndex >= payMatrix[currentLevel].length) incrementedIndex = payMatrix[currentLevel].length - 1;
+    const incrementedPay = payMatrix[currentLevel][incrementedIndex];
+
+    const newPay = payMatrix[promotedLevel].find(p => p >= incrementedPay) || payMatrix[promotedLevel][payMatrix[promotedLevel].length - 1];
+
+    result.innerHTML = `<b>New Basic Pay:</b> ₹${newPay.toLocaleString()}<br>
+                        <b>Next Increment Date:</b> ${nextDNI.toISOString().split('T')[0]}`;
+  }
+
+  loadPayMatrix();
+</script>
+</body>
+</html>
