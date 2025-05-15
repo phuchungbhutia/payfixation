@@ -17,8 +17,8 @@ A simple, browser-based tool to calculate the **Date of Next Increment (DNI)** a
 
 1. Download or clone this repo:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/pay-fixation-calculator.git
-   cd pay-fixation-calculator
+   git clone https://github.com/phuchungbhutia/payfixation.git
+   cd payfixation
    ```
 2. Open `index.html` in your browser
 3. Fill in:
@@ -92,7 +92,7 @@ git push origin gh-pages
 Then visit:
 
 ```
-https://yourusername.github.io/pay-fixation-calculator/
+https://phuchungbhutia.github.io/payfixation/
 ```
 
 ---
