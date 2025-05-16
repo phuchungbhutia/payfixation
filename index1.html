@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sikkim Pay Fixation Calculator</title>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -15,7 +15,13 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
         <label class="block font-medium">Promotion Date</label>
-        <input type="date" id="promotionDate" class="w-full p-2 border rounded" />
+        <input type="date" id="promotionDate" class="w-full p-2 border rounded" value="" />
+        <script>
+          document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            document.getElementById('promotionDate').value = today.toISOString().split('T')[0];
+          });
+        </script>
       </div>
       <div>
         <label class="block font-medium">Current Pay Level</label>
@@ -101,6 +107,38 @@
       return (month < 6 || (month === 6 && date.getDate() <= 1)) ? new Date(`${year}-01-01`) : new Date(`${year}-07-01`);
     }
 
+    function incrementCell(level, currentCell, steps = 1) {
+      if (!payMatrix[level]) return 0;
+      return Math.min(currentCell + steps, payMatrix[level].length - 1);
+    }
+
+    function generateTimeline(startDate, level, startCell, incrementsCount) {
+      const timeline = [];
+      let currentDate = new Date(startDate);
+      let currentCell = startCell;
+      for (let i = 0; i <= incrementsCount; i++) {
+        timeline.push({
+          date: formatDate(currentDate),
+          level: level,
+          cell: currentCell + 1,
+          pay: payMatrix[level][currentCell],
+          explanation: i === 0 ? 'Starting pay' : 'Incremented pay'
+        });
+
+        const nextDate = getNextIncrementDate(currentDate);
+        currentCell = incrementCell(level, currentCell, 1);
+        currentDate = nextDate;
+      }
+      return timeline;
+    }
+
+    // Helper: returns the max pay entry for a given date in a timeline array
+    function maxPayEntryOnDate(rows, date) {
+      const entries = rows.filter(r => r.date === date);
+      if (entries.length === 0) return null;
+      return entries.reduce((maxEntry, current) => (current.pay > maxEntry.pay ? current : maxEntry), entries[0]);
+    }
+
     function calculateFixation() {
       const promoDateStr = document.getElementById('promotionDate').value;
       if (!promoDateStr) return showMessage('Please enter the promotion date.', 'error');
@@ -111,173 +149,147 @@
       const promoLevel = document.getElementById('promotedLevel').value;
       const currPay = payMatrix[currLevel][currCell];
 
-      // --- DoP Logic ---
-      const dopRows = [];
-      const dopIncrCell = Math.min(currCell + 1, payMatrix[currLevel].length - 1);
+      // DoP logic
+      const dopIncrCell = incrementCell(currLevel, currCell, 1);
       const dopIncrPay = payMatrix[currLevel][dopIncrCell];
       let dopFixCell = payMatrix[promoLevel].findIndex(p => p >= dopIncrPay);
       if (dopFixCell === -1) dopFixCell = payMatrix[promoLevel].length - 1;
-      const dopFixPay = payMatrix[promoLevel][dopFixCell];
-      const dopNextIncrDate = getNextIncrementDate(promoDate);
-      const dopNextCell = Math.min(dopFixCell + 1, payMatrix[promoLevel].length - 1);
-      const dopNextPay = payMatrix[promoLevel][dopNextCell];
 
-      dopRows.push({ date: formatDate(promoDate), level: currLevel, cell: currCell + 1, pay: currPay, explanation: 'Initial pay before promotion' });
-      dopRows.push({ date: formatDate(promoDate), level: currLevel, cell: dopIncrCell + 1, pay: dopIncrPay, explanation: '1 increment in current level' });
-      dopRows.push({ date: formatDate(promoDate), level: promoLevel, cell: dopFixCell + 1, pay: dopFixPay, explanation: 'Placed at equal or next higher in promoted level' });
-      dopRows.push({ date: formatDate(dopNextIncrDate), level: promoLevel, cell: dopNextCell + 1, pay: dopNextPay, explanation: 'Next Increment Date after DoP' });
+      const dopTimeline = [];
+      dopTimeline.push({date: formatDate(promoDate), level: currLevel, cell: currCell + 1, pay: currPay, explanation: 'Initial pay before promotion'});
+      dopTimeline.push({date: formatDate(promoDate), level: currLevel, cell: dopIncrCell + 1, pay: dopIncrPay, explanation: '1 increment in current level'});
+      dopTimeline.push({date: formatDate(promoDate), level: promoLevel, cell: dopFixCell + 1, pay: payMatrix[promoLevel][dopFixCell], explanation: 'Placed at equal or next higher in promoted level'});
 
-      // --- DNI Logic ---
-      const dniRows = [];
+      const dopFixDate = promoDate;
+      const dopIncrements = 5;
+      const dopIncrTimeline = generateTimeline(dopFixDate, promoLevel, dopFixCell, dopIncrements);
+      dopIncrTimeline.shift();
+      dopTimeline.push(...dopIncrTimeline);
+
+      // DNI logic
       let dniInitialCell = payMatrix[promoLevel].findIndex(p => p >= currPay);
       if (dniInitialCell === -1) dniInitialCell = payMatrix[promoLevel].length - 1;
-      const dniInitialPay = payMatrix[promoLevel][dniInitialCell];
+
       const dniEffectiveDate = getNextIncrementDate(promoDate);
-      const dniTwoIncrCell = Math.min(currCell + 2, payMatrix[currLevel].length - 1);
+      const dniTwoIncrCell = incrementCell(currLevel, currCell, 2);
       const dniTwoIncrPay = payMatrix[currLevel][dniTwoIncrCell];
+
       let dniFixCell = payMatrix[promoLevel].findIndex(p => p >= dniTwoIncrPay);
       if (dniFixCell === -1) dniFixCell = payMatrix[promoLevel].length - 1;
-      const dniFixPay = payMatrix[promoLevel][dniFixCell];
-      const dniNextIncrDate = getNextIncrementDate(dniEffectiveDate);
-      const dniNextCell = Math.min(dniFixCell + 1, payMatrix[promoLevel].length - 1);
-      const dniNextPay = payMatrix[promoLevel][dniNextCell];
 
-      dniRows.push({ date: formatDate(promoDate), level: promoLevel, cell: dniInitialCell + 1, pay: dniInitialPay, explanation: 'Initial placement in promoted level' });
-      dniRows.push({ date: formatDate(dniEffectiveDate), level: currLevel, cell: dniTwoIncrCell + 1, pay: dniTwoIncrPay, explanation: '2 increments in old level (annual + promotional)' });
-      dniRows.push({ date: formatDate(dniEffectiveDate), level: promoLevel, cell: dniFixCell + 1, pay: dniFixPay, explanation: 'Placed at next higher in promoted level' });
-      dniRows.push({ date: formatDate(dniNextIncrDate), level: promoLevel, cell: dniNextCell + 1, pay: dniNextPay, explanation: 'Next Increment Date after DNI' });
+      const dniTimeline = [];
+      dniTimeline.push({date: formatDate(promoDate), level: promoLevel, cell: dniInitialCell + 1, pay: payMatrix[promoLevel][dniInitialCell], explanation: 'Initial placement in promoted level'});
+      dniTimeline.push({date: formatDate(dniEffectiveDate), level: currLevel, cell: dniTwoIncrCell + 1, pay: dniTwoIncrPay, explanation: '2 increments in old level (annual + promotional)'});
+      dniTimeline.push({date: formatDate(dniEffectiveDate), level: promoLevel, cell: dniFixCell + 1, pay: payMatrix[promoLevel][dniFixCell], explanation: 'Placed at next higher in promoted level'});
 
+      const dniIncrements = 4;
+      const dniIncrTimeline = generateTimeline(dniEffectiveDate, promoLevel, dniFixCell, dniIncrements);
+      dniIncrTimeline.shift();
+      dniTimeline.push(...dniIncrTimeline);
+
+      // Render tables
       const renderTable = (title, rows) => {
         return `
           <h3 class="text-xl font-semibold mb-2">${title}</h3>
-          <table class="w-full text-sm border">
-            <thead><tr><th class="border px-2 py-1">Date</th><th class="border px-2 py-1">Pay Level</th><th class="border px-2 py-1">Cell</th><th class="border px-2 py-1">Basic Pay (₹)</th><th class="border px-2 py-1">Explanation</th></tr></thead>
+          <table class="w-full text-sm border mb-6">
+            <thead>
+              <tr>
+                <th class="border px-2 py-1">Date</th>
+                <th class="border px-2 py-1">Pay Level</th>
+                <th class="border px-2 py-1">Cell</th>
+                <th class="border px-2 py-1">Basic Pay (₹)</th>
+                <th class="border px-2 py-1">Explanation</th>
+              </tr>
+            </thead>
             <tbody>
-              ${rows.map(r => `<tr><td class="border px-2 py-1">${r.date}</td><td class="border px-2 py-1">${r.level}</td><td class="border px-2 py-1">${r.cell}</td><td class="border px-2 py-1">₹${r.pay.toLocaleString()}</td><td class="border px-2 py-1">${r.explanation}</td></tr>`).join('')}
+              ${rows.map(r => `<tr>
+                <td class="border px-2 py-1">${r.date}</td>
+                <td class="border px-2 py-1">${r.level}</td>
+                <td class="border px-2 py-1">${r.cell}</td>
+                <td class="border px-2 py-1">₹${r.pay.toLocaleString()}</td>
+                <td class="border px-2 py-1">${r.explanation}</td>
+              </tr>`).join('')}
             </tbody>
           </table>
         `;
       };
 
-      document.getElementById('dopResult').innerHTML = renderTable('Fixation from Date of Promotion (DoP)', dopRows);
-      document.getElementById('dniResult').innerHTML = renderTable('Fixation from Date of Next Increment (DNI)', dniRows);
+      document.getElementById('dopResult').innerHTML = renderTable('Fixation from Date of Promotion (DoP)', dopTimeline);
+      document.getElementById('dniResult').innerHTML = renderTable('Fixation from Date of Next Increment (DNI)', dniTimeline);
 
-      const recommendation = document.getElementById('recommendation');
-      const finalDoPPay = dopRows[dopRows.length - 1].pay;
-      const finalDNIPay = dniRows[dniRows.length - 1].pay;
-      if (finalDoPPay > finalDNIPay) recommendation.innerHTML = `<div class='mt-4 p-4 bg-yellow-50 border border-yellow-300 rounded'>
-        <strong></strong><br>
-        <span class='text-sm text-gray-700'>Cumulative benefit over time is based on your priority: immediate gains (DoP) or higher later increments (DNI).</span>
-      </div>`;
-      else if (finalDoPPay < finalDNIPay) recommendation.innerText = '✅ Recommendation: DNI is more beneficial only if you prioritize higher future increments, despite delayed benefit.';
-      else recommendation.innerText = '✅ Recommendation: Both options offer the same benefit.';
+      // Date-wise pay comparison analysis
+      const allDatesSet = new Set([...dopTimeline.map(r => r.date), ...dniTimeline.map(r => r.date)]);
+      const allDates = Array.from(allDatesSet).sort();
+
+      let comparisonHtml = `
+        <h3 class="text-xl font-semibold mb-2">Date-wise Pay Comparison Analysis</h3>
+        <table class="w-full text-sm border">
+          <thead>
+            <tr>
+              <th class="border px-2 py-1">Date</th>
+              <th class="border px-2 py-1">DoP Pay (₹)</th>
+              <th class="border px-2 py-1">DoP Level</th>
+              <th class="border px-2 py-1">DoP Cell</th>
+              <th class="border px-2 py-1">DNI Pay (₹)</th>
+              <th class="border px-2 py-1">DNI Level</th>
+              <th class="border px-2 py-1">DNI Cell</th>
+              <th class="border px-2 py-1">Higher Pay</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      function maxPayEntryOnDate(rows, date) {
+        const entries = rows.filter(r => r.date === date);
+        if (entries.length === 0) return null;
+        return entries.reduce((maxEntry, current) => (current.pay > maxEntry.pay ? current : maxEntry), entries[0]);
+      }
+
+      allDates.forEach(date => {
+        const dopEntry = maxPayEntryOnDate(dopTimeline, date);
+        const dniEntry = maxPayEntryOnDate(dniTimeline, date);
+
+        const dopPay = dopEntry ? dopEntry.pay : null;
+        const dniPay = dniEntry ? dniEntry.pay : null;
+
+        let higherPayText = 'Equal';
+        if (dopPay !== null && dniPay !== null) {
+          if (dopPay > dniPay) higherPayText = 'DoP';
+          else if (dniPay > dopPay) higherPayText = 'DNI';
+        } else if (dopPay !== null) {
+          higherPayText = 'DoP only';
+        } else if (dniPay !== null) {
+          higherPayText = 'DNI only';
+        } else {
+          higherPayText = 'N/A';
+        }
+
+        comparisonHtml += `
+          <tr>
+            <td class="border px-2 py-1">${date}</td>
+            <td class="border px-2 py-1">${dopPay !== null ? '₹' + dopPay.toLocaleString() : '-'}</td>
+            <td class="border px-2 py-1">${dopEntry ? dopEntry.level : '-'}</td>
+            <td class="border px-2 py-1">${dopEntry ? dopEntry.cell : '-'}</td>
+            <td class="border px-2 py-1">${dniPay !== null ? '₹' + dniPay.toLocaleString() : '-'}</td>
+            <td class="border px-2 py-1">${dniEntry ? dniEntry.level : '-'}</td>
+            <td class="border px-2 py-1">${dniEntry ? dniEntry.cell : '-'}</td>
+            <td class="border px-2 py-1 font-semibold">${higherPayText}</td>
+          </tr>
+        `;
+      });
+
+      comparisonHtml += `</tbody></table>`;
+
+      document.getElementById('recommendation').innerHTML = comparisonHtml;
     }
 
     document.getElementById('calculateBtn').addEventListener('click', calculateFixation);
     document.getElementById('currentLevel').addEventListener('change', updateCells);
 
-    fetch('pay_matrix_sikkim.csv')
+    fetch('./pay_matrix_sikkim.csv')
       .then(res => res.text())
       .then(data => parseCSV(data))
       .catch(err => showMessage('Failed to load pay matrix CSV.', 'error'));
   </script>
-<canvas id="comparisonChart" class="mt-12"></canvas>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-function drawChart(dopRows, dniRows) {
-  const ctx = document.getElementById('comparisonChart').getContext('2d');
-  const labels = Array.from(new Set([...dopRows, ...dniRows].map(r => r.date))).sort();
-  const dopData = labels.map(date => {
-    const match = dopRows.find(r => r.date === date);
-    return match ? match.pay : null;
-  });
-  const dniData = labels.map(date => {
-    const match = dniRows.find(r => r.date === date);
-    return match ? match.pay : null;
-  });
-  // Calculate cumulative pay arrays
-  let dopTotal = 0;
-  let dniTotal = 0;
-  const dopCumulative = labels.map(date => {
-    const match = dopRows.find(r => r.date === date);
-    if (match) dopTotal += match.pay;
-    return dopTotal;
-  });
-  const dniCumulative = labels.map(date => {
-    const match = dniRows.find(r => r.date === date);
-    if (match) dniTotal += match.pay;
-    return dniTotal;
-  });
-
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'DoP (Basic Pay)',
-          data: dopData,
-          borderColor: 'rgba(59, 130, 246, 1)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          tension: 0.3,
-          fill: true
-        },
-        {
-          label: 'DNI (Basic Pay)',
-          data: dniData,
-          borderColor: 'rgba(16, 185, 129, 1)',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          tension: 0.3,
-          fill: true
-        },
-        {
-          label: 'DoP (Cumulative)',
-          data: dopCumulative,
-          borderColor: 'rgba(59, 130, 246, 0.6)',
-          borderDash: [5, 5],
-          fill: false,
-          tension: 0.3
-        },
-        {
-          label: 'DNI (Cumulative)',
-          data: dniCumulative,
-          borderColor: 'rgba(16, 185, 129, 0.6)',
-          borderDash: [5, 5],
-          fill: false,
-          tension: 0.3
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'top' },
-        title: { display: true, text: 'Pay Progression Comparison Over Time' }
-      },
-      scales: {
-        y: {
-          beginAtZero: false,
-          title: { display: true, text: 'Basic Pay (₹)' }
-        },
-        x: {
-          title: { display: true, text: 'Date' }
-        }
-      }
-    }
-  });
-}
-</script>
-<script>
-  const originalCalc = calculateFixation;
-  calculateFixation = function () {
-    originalCalc();
-    setTimeout(() => {
-      drawChart(
-        dopRows,
-        dniRows
-      );
-    }, 100);
-  };
-</script>
 </body>
 </html>
