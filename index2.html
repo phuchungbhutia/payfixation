@@ -1,0 +1,90 @@
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pay Fixation Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@tailwindcss/browser@latest"></script>
+    <style>
+        /* Custom styles for the message box */
+        #message-box {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #f0fdf4;
+            color: #15803d;
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px solid #16a34a;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+        #message-box.show {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-inter antialiased">
+    <div class="container mx-auto p-6 md:p-10">
+        <h1 class="text-2xl font-semibold text-blue-600 text-center mb-8">Sikkim Govt Pay Fixation Calculator</h1>
+
+        <div id="message-box" class="hidden"></div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Employee Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label for="promotionDate" class="block text-gray-700 text-sm font-bold mb-2">Promotion Date:</label>
+                    <input type="date" id="promotionDate" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-4">
+                    <label for="fixationOption" class="block text-gray-700 text-sm font-bold mb-2">Fixation Option:</label>
+                    <select id="fixationOption" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="DoP">Date of Promotion (DoP)</option>
+                        <option value="DNI">Date of Next Increment (DNI)</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="currentLevel" class="block text-gray-700 text-sm font-bold mb-2">Current Pay Level:</label>
+                    <select id="currentLevel" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="currentCell" class="block text-gray-700 text-sm font-bold mb-2">Current Pay Cell:</label>
+                    <select id="currentCell" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="promotedLevel" class="block text-gray-700 text-sm font-bold mb-2">Promoted Pay Level:</label>
+                    <select id="promotedLevel" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Result</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label for="newBasicPay" class="block text-gray-700 text-sm font-bold mb-2">New Basic Pay:</label>
+                    <div id="newBasicPay" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline font-semibold"></div>
+                </div>
+                <div class="mb-4">
+                    <label for="nextIncrementDate" class="block text-gray-700 text-sm font-bold mb-2">Next Increment Date:</label>
+                    <div id="nextIncrementDate" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline font-semibold"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button id="calculateBtn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Calculate</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

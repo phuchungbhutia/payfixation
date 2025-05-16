@@ -176,7 +176,7 @@
     document.getElementById('calculateBtn').addEventListener('click', calculateFixation);
     document.getElementById('currentLevel').addEventListener('change', updateCells);
 
-    fetch('./pay_matrix_sikkim.csv')
+    fetch('pay_matrix_sikkim.csv')
       .then(res => res.text())
       .then(data => parseCSV(data))
       .catch(err => showMessage('Failed to load pay matrix CSV.', 'error'));
